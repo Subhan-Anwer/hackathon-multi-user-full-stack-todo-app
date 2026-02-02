@@ -1,8 +1,43 @@
-# Claude Code Rules
+# Claude Code Rules - Phase II: Todo Full-Stack Web Application
 
 This file is generated during init for the selected agent.
 
 You are an expert AI assistant specializing in Spec-Driven Development (SDD). Your primary goal is to work with the architext to build products.
+
+## Project Context
+
+**Phase:** Phase II - Multi-User Full-Stack Web Application
+**Objective:** Transform todo app into a modern multi-user web application with persistent storage using Claude Code and Spec-Kit Plus workflow.
+
+**Tech Stack:**
+- Frontend: Next.js 16+ (App Router)
+- Backend: Python FastAPI
+- ORM: SQLModel
+- Database: Neon Serverless PostgreSQL
+- Authentication: Better Auth with JWT
+- Development: Spec-Driven (Claude Code + Spec-Kit Plus)
+
+**Core Features (Basic Level):**
+1. Add Task – Create new todo items
+2. Delete Task – Remove tasks from list
+3. Update Task – Modify existing task details
+4. View Task List – Display all tasks
+5. Mark as Complete – Toggle task completion status
+6. Authentication – User signup/signin using Better Auth
+
+**Monorepo Structure:**
+```
+hackathon-multi-user-full-stack-todo-app/
+├── .specify/          # Spec-Kit Plus configuration
+├── specs/             # Organized specifications
+├── history/           # PHRs and ADRs
+├── CLAUDE.md          # Root instructions (this file)
+├── frontend/          # Next.js 16+ app
+│   └── CLAUDE.md      # Frontend-specific guidelines
+├── backend/           # FastAPI app
+│   └── CLAUDE.md      # Backend-specific guidelines
+└── docker-compose.yml
+```
 
 ## Task context
 
@@ -13,6 +48,62 @@ You are an expert AI assistant specializing in Spec-Driven Development (SDD). Yo
 - Prompt History Records (PHRs) are created automatically and accurately for every user prompt.
 - Architectural Decision Record (ADR) suggestions are made intelligently for significant decisions.
 - All changes are small, testable, and reference code precisely.
+- Authentication and user isolation is properly implemented for all API endpoints.
+
+## API Endpoints
+
+All endpoints require JWT authentication and enforce user isolation:
+
+```
+Method  Endpoint                           Description
+GET     /api/{user_id}/tasks              List all tasks for user
+POST    /api/{user_id}/tasks              Create a new task
+GET     /api/{user_id}/tasks/{id}         Get task details
+PUT     /api/{user_id}/tasks/{id}         Update a task
+DELETE  /api/{user_id}/tasks/{id}         Delete a task
+PATCH   /api/{user_id}/tasks/{id}/complete Toggle completion status
+```
+
+## Authentication & Security
+
+**JWT Token Flow:**
+1. User logs in on Frontend → Better Auth creates session and issues JWT token
+2. Frontend makes API call → Includes JWT in `Authorization: Bearer <token>` header
+3. Backend receives request → Extracts token, verifies signature using shared secret
+4. Backend identifies user → Decodes token to get user ID and validates against URL user_id
+5. Backend filters data → Returns only tasks belonging to authenticated user
+
+**Security Requirements:**
+- All endpoints require valid JWT token (401 Unauthorized if missing)
+- User isolation enforced on every operation
+- Shared secret (`BETTER_AUTH_SECRET`) must be set in both frontend and backend `.env`
+- No hardcoded secrets or tokens in code
+- Task ownership verified on all operations
+
+## Spec-Kit Plus Integration
+
+**Specification Organization:**
+```
+specs/
+├── overview.md           # Project overview
+├── architecture.md       # System architecture
+├── features/            # Feature specifications
+│   ├── task-crud.md
+│   └── authentication.md
+├── api/                 # API specifications
+│   └── rest-endpoints.md
+├── database/            # Database specifications
+│   └── schema.md
+└── ui/                  # UI specifications
+    ├── components.md
+    └── pages.md
+```
+
+**How to Reference Specs:**
+- Use `@specs/features/task-crud.md` to reference feature specs
+- Use `@specs/api/rest-endpoints.md` for API endpoints
+- Use `@specs/database/schema.md` for database schema
+- Always read relevant spec before implementing
 
 ## Core Guarantees (Product Promise)
 
@@ -196,15 +287,66 @@ If ALL true, suggest:
 
 Wait for consent; never auto-create ADRs. Group related decisions (stacks, authentication, deployment) into one ADR when appropriate.
 
-## Basic Project Structure
+## Project Structure
 
+### Spec-Kit Plus Artifacts
 - `.specify/memory/constitution.md` — Project principles
-- `specs/<feature>/spec.md` — Feature requirements
-- `specs/<feature>/plan.md` — Architecture decisions
-- `specs/<feature>/tasks.md` — Testable tasks with cases
-- `history/prompts/` — Prompt History Records
+- `specs/overview.md` — Project overview
+- `specs/architecture.md` — System architecture
+- `specs/features/` — Feature specifications (task-crud.md, authentication.md)
+- `specs/api/` — API endpoint specifications
+- `specs/database/` — Database schema specifications
+- `specs/ui/` — UI component specifications
+- `history/prompts/` — Prompt History Records (PHRs)
 - `history/adr/` — Architecture Decision Records
 - `.specify/` — SpecKit Plus templates and scripts
 
+### Application Code
+- `frontend/` — Next.js 16+ application (App Router)
+  - `CLAUDE.md` — Frontend-specific guidelines
+  - TypeScript, Tailwind CSS
+  - Better Auth integration with JWT
+- `backend/` — FastAPI application
+  - `CLAUDE.md` — Backend-specific guidelines
+  - SQLModel ORM
+  - JWT authentication middleware
+  - Neon PostgreSQL connection
+- `docker-compose.yml` — Multi-service orchestration
+
+## Development Workflow
+
+1. **Read Spec** → `@specs/features/<feature>.md`
+2. **Implement Backend** → Follow `@backend/CLAUDE.md` guidelines
+3. **Implement Frontend** → Follow `@frontend/CLAUDE.md` guidelines
+4. **Test** → Verify authentication, user isolation, API endpoints
+5. **Iterate** → Update specs if requirements change
+
+## Commands
+
+**Frontend:**
+```bash
+cd frontend && npm run dev
+```
+
+**Backend:**
+```bash
+cd backend && uvicorn main:app --reload
+```
+
+**Both (Docker):**
+```bash
+docker-compose up
+```
+
 ## Code Standards
 See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
+
+**Additional Standards for This Project:**
+- Use TypeScript for frontend code
+- Use Python type hints for backend code
+- All API responses must be JSON
+- Use Pydantic models for request/response validation
+- Implement proper error handling with HTTPException
+- Follow RESTful API conventions
+- Enforce user isolation on all database queries
+- Never expose user data across user boundaries
