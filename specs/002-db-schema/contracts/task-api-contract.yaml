@@ -1,0 +1,211 @@
+# API Contract: Task Operations
+
+## Base Path
+`/api/{user_id}/tasks`
+
+## Authentication
+All endpoints require JWT token in Authorization header:
+`Authorization: Bearer <jwt_token>`
+
+## Endpoints
+
+### GET /api/{user_id}/tasks
+**Description**: Retrieve all tasks for the authenticated user
+
+**Path Parameters**:
+- `user_id`: UUID/String - User identifier from JWT token
+
+**Query Parameters**:
+- `completed` (optional): boolean - Filter by completion status
+- `limit` (optional): integer - Limit number of results
+- `offset` (optional): integer - Offset for pagination
+
+**Response**:
+```
+Status: 200 OK
+{
+  "tasks": [
+    {
+      "id": 1,
+      "user_id": "user-uuid",
+      "title": "Sample task",
+      "description": "Task description",
+      "completed": false,
+      "created_at": "2023-01-01T00:00:00Z",
+      "updated_at": "2023-01-01T00:00:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+
+### POST /api/{user_id}/tasks
+**Description**: Create a new task for the authenticated user
+
+**Path Parameters**:
+- `user_id`: UUID/String - User identifier from JWT token
+
+**Request Body**:
+```
+{
+  "title": "New task title",
+  "description": "Optional task description",
+  "completed": false
+}
+```
+
+**Validation**:
+- `title`: Required, max 200 characters
+- `description`: Optional, max 1000 characters
+- `completed`: Optional, defaults to false
+
+**Response**:
+```
+Status: 201 Created
+{
+  "id": 1,
+  "user_id": "user-uuid",
+  "title": "New task title",
+  "description": "Optional task description",
+  "completed": false,
+  "created_at": "2023-01-01T00:00:00Z",
+  "updated_at": "2023-01-01T00:00:00Z"
+}
+```
+
+### GET /api/{user_id}/tasks/{id}
+**Description**: Retrieve a specific task for the authenticated user
+
+**Path Parameters**:
+- `user_id`: UUID/String - User identifier from JWT token
+- `id`: integer - Task identifier
+
+**Response**:
+```
+Status: 200 OK
+{
+  "id": 1,
+  "user_id": "user-uuid",
+  "title": "Sample task",
+  "description": "Task description",
+  "completed": false,
+  "created_at": "2023-01-01T00:00:00Z",
+  "updated_at": "2023-01-01T00:00:00Z"
+}
+```
+
+**Error Responses**:
+- `404 Not Found`: Task not found or doesn't belong to user
+- `403 Forbidden`: User doesn't have access to this task
+
+### PUT /api/{user_id}/tasks/{id}
+**Description**: Update a specific task for the authenticated user
+
+**Path Parameters**:
+- `user_id`: UUID/String - User identifier from JWT token
+- `id`: integer - Task identifier
+
+**Request Body**:
+```
+{
+  "title": "Updated task title",
+  "description": "Updated task description",
+  "completed": true
+}
+```
+
+**Response**:
+```
+Status: 200 OK
+{
+  "id": 1,
+  "user_id": "user-uuid",
+  "title": "Updated task title",
+  "description": "Updated task description",
+  "completed": true,
+  "created_at": "2023-01-01T00:00:00Z",
+  "updated_at": "2023-01-02T00:00:00Z"
+}
+```
+
+### PATCH /api/{user_id}/tasks/{id}/complete
+**Description**: Toggle completion status of a specific task
+
+**Path Parameters**:
+- `user_id`: UUID/String - User identifier from JWT token
+- `id`: integer - Task identifier
+
+**Request Body**:
+```
+{
+  "completed": true
+}
+```
+
+**Response**:
+```
+Status: 200 OK
+{
+  "id": 1,
+  "user_id": "user-uuid",
+  "title": "Sample task",
+  "description": "Task description",
+  "completed": true,
+  "created_at": "2023-01-01T00:00:00Z",
+  "updated_at": "2023-01-02T00:00:00Z"
+}
+```
+
+### DELETE /api/{user_id}/tasks/{id}
+**Description**: Delete a specific task for the authenticated user
+
+**Path Parameters**:
+- `user_id`: UUID/String - User identifier from JWT token
+- `id`: integer - Task identifier
+
+**Response**:
+```
+Status: 204 No Content
+```
+
+## Common Error Responses
+
+### 400 Bad Request
+```
+{
+  "error": "Invalid input",
+  "message": "Detailed error message"
+}
+```
+
+### 401 Unauthorized
+```
+{
+  "error": "Unauthorized",
+  "message": "Authentication required"
+}
+```
+
+### 403 Forbidden
+```
+{
+  "error": "Forbidden",
+  "message": "Access denied to this resource"
+}
+```
+
+### 404 Not Found
+```
+{
+  "error": "Not found",
+  "message": "Resource not found"
+}
+```
+
+### 500 Internal Server Error
+```
+{
+  "error": "Server error",
+  "message": "An unexpected error occurred"
+}
+```

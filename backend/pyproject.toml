@@ -1,7 +1,54 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "backend"
+name = "todo-backend"
 version = "0.1.0"
-description = "Add your description here"
+description = "Backend API for the multi-user todo application"
+authors = [{name = "Developer", email = "developer@example.com"}]
+license = {text = "MIT"}
 readme = "README.md"
-requires-python = ">=3.12"
-dependencies = []
+requires-python = ">=3.11"
+dependencies = [
+    "sqlmodel>=0.0.16",
+    "pydantic>=2.6.4",
+    "pydantic-core>=2.16.3",
+    "psycopg2-binary>=2.9.9",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "python-multipart>=0.0.9",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-dotenv>=1.0.1",
+    "pytest>=9.0.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.21.1",
+    "black>=24.0.0",
+    "isort>=5.10.0",
+    "flake8>=7.0.0",
+    "mypy>=1.8.0"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
