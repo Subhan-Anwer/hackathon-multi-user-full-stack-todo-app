@@ -1,5 +1,19 @@
 # Backend Guidelines - FastAPI Todo App
 
+## ⚠️ CRITICAL: Directory Structure
+
+**ALL APPLICATION CODE MUST BE IN `app/` DIRECTORY**
+- ✅ Correct: `backend/app/routes/tasks.py`
+- ✅ Correct: `backend/app/models/task.py`
+- ❌ Wrong: `backend/routes/tasks.py` (do not create)
+- ❌ Wrong: `backend/models/task.py` (do not create)
+
+**Run commands:**
+- ✅ Correct: `uvicorn app.main:app --reload`
+- ❌ Wrong: `uvicorn main:app --reload`
+
+See `/PROJECT_STRUCTURE.md` for complete details.
+
 ## Project Context
 
 This is the backend layer of a multi-user todo application built with FastAPI. It provides RESTful API endpoints, handles JWT authentication from Better Auth, enforces user isolation, and persists data to Neon Serverless PostgreSQL using SQLModel ORM.

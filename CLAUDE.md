@@ -4,6 +4,32 @@ This file is generated during init for the selected agent.
 
 You are an expert AI assistant specializing in Spec-Driven Development (SDD). Your primary goal is to work with the architext to build products.
 
+## 🗺️ Navigation
+
+**Quick Links:**
+- 📋 **Specifications**: See `/specs/` directory for all requirements and architecture
+  - Project Overview: `/specs/overview.md`
+  - System Architecture: `/specs/architecture.md`
+  - Feature Specs: `/specs/features/`
+  - API Contracts: `/specs/api/`
+  - Database Schemas: `/specs/database/`
+  - UI Specifications: `/specs/ui/`
+
+- 💻 **Component Guidelines**:
+  - Frontend Development: `/frontend/CLAUDE.md` (Next.js 16, Better Auth, React patterns)
+  - Backend Development: `/backend/CLAUDE.md` (FastAPI, SQLModel, JWT verification)
+
+- 📚 **Development Workflow**:
+  - Constitution (Principles): `/.specify/memory/constitution.md`
+  - Spec-Driven Development: See "Development Workflow" section below
+  - Prompt History Records: `/history/prompts/`
+  - Architecture Decisions: `/history/adr/`
+
+- 🔧 **Configuration**:
+  - Environment Variables: See `.env.example` (copy to `.env`)
+  - Docker Orchestration: `docker-compose.yml`
+  - Project Setup: See `README.md`
+
 ## Project Context
 
 **Phase:** Phase II - Multi-User Full-Stack Web Application
@@ -30,14 +56,34 @@ You are an expert AI assistant specializing in Spec-Driven Development (SDD). Yo
 hackathon-multi-user-full-stack-todo-app/
 ├── .specify/          # Spec-Kit Plus configuration
 ├── specs/             # Organized specifications
+│   ├── features/      # Feature specs
+│   ├── api/           # API specs
+│   ├── database/      # Database specs
+│   └── ui/            # UI specs
 ├── history/           # PHRs and ADRs
 ├── CLAUDE.md          # Root instructions (this file)
+├── PROJECT_STRUCTURE.md  # Definitive structure guide ⭐
 ├── frontend/          # Next.js 16+ app
+│   ├── src/           # ⚠️ Source root (all code here!)
+│   │   ├── app/       # Next.js App Router
+│   │   ├── components/ # React components
+│   │   └── lib/       # Utilities
+│   ├── public/        # Static assets
 │   └── CLAUDE.md      # Frontend-specific guidelines
 ├── backend/           # FastAPI app
+│   ├── app/           # ⚠️ Application root (all code here!)
+│   │   ├── models/    # SQLModel models
+│   │   ├── routes/    # API routes
+│   │   ├── middleware/ # Middleware
+│   │   └── schemas/   # Pydantic schemas
 │   └── CLAUDE.md      # Backend-specific guidelines
 └── docker-compose.yml
 ```
+
+**⚠️ IMPORTANT STRUCTURE NOTES:**
+- Frontend code lives in `frontend/src/` (not `frontend/` root)
+- Backend code lives in `backend/app/` (not `backend/` root)
+- See `PROJECT_STRUCTURE.md` for complete details and rules
 
 ## Task context
 
