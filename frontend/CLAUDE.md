@@ -1,5 +1,15 @@
 # Frontend Guidelines - Next.js 16+ Todo App
 
+## ⚠️ CRITICAL: Directory Structure
+
+**ALL SOURCE CODE MUST BE IN `src/` DIRECTORY**
+- ✅ Correct: `frontend/src/app/page.tsx`
+- ✅ Correct: `frontend/src/components/ui/button.tsx`
+- ❌ Wrong: `frontend/app/page.tsx` (do not use)
+- ❌ Wrong: `frontend/components/ui/button.tsx` (do not use)
+
+See `/PROJECT_STRUCTURE.md` for complete details.
+
 ## Project Context
 
 This is the frontend layer of a multi-user todo application built with Next.js 16+ using the App Router. It integrates with Better Auth for authentication and communicates with a FastAPI backend via JWT tokens.

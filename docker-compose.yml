@@ -1,0 +1,110 @@
+# =============================================================================
+# Docker Compose Configuration - Multi-User Todo Application
+# =============================================================================
+# This file orchestrates the frontend (Next.js) and backend (FastAPI) services.
+#
+# NOTE: Database is NOT included here - using external Neon PostgreSQL
+# (Serverless PostgreSQL hosted at neon.tech)
+#
+# Usage:
+#   docker-compose up           # Start all services
+#   docker-compose down         # Stop all services
+#   docker-compose logs -f      # View logs from all services
+#   docker-compose restart      # Restart all services
+#
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ===========================================================================
+  # Frontend Service - Next.js 16+
+  # ===========================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: todo-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      # Enable hot reload by mounting source code
+      # Exclude node_modules to use container's node_modules
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      # CRITICAL: BETTER_AUTH_SECRET must match backend for JWT authentication
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      - NODE_ENV=${NODE_ENV:-development}
+    depends_on:
+      - backend
+    networks:
+      - todo-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Backend Service - FastAPI
+  # ===========================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: todo-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Enable hot reload by mounting source code
+      - ./backend:/app
+    environment:
+      # CRITICAL: BETTER_AUTH_SECRET must match frontend for JWT authentication
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - DATABASE_URL=${DATABASE_URL}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      - PORT=${PORT:-8000}
+      - DEBUG=${DEBUG:-false}
+    networks:
+      - todo-network
+    restart: unless-stopped
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  todo-network:
+    driver: bridge
+
+# =============================================================================
+# IMPORTANT NOTES
+# =============================================================================
+#
+# 1. DATABASE (Neon PostgreSQL)
+#    - This application uses external Neon Serverless PostgreSQL
+#    - No local database service is defined in this docker-compose.yml
+#    - Get DATABASE_URL from: https://neon.tech dashboard
+#    - Format: postgresql://username:password@hostname.neon.tech/database?sslmode=require
+#
+# 2. ENVIRONMENT VARIABLES
+#    - Create .env file in project root (copy from .env.example)
+#    - BETTER_AUTH_SECRET MUST be identical in frontend and backend
+#    - Generate secret: openssl rand -base64 32
+#
+# 3. HOT RELOAD
+#    - Frontend: Changes to code trigger automatic Next.js rebuild
+#    - Backend: Uvicorn watches for file changes and reloads automatically
+#    - Volume mounts enable this without rebuilding containers
+#
+# 4. PORT CONFIGURATION
+#    - Frontend: http://localhost:3000
+#    - Backend API: http://localhost:8000
+#    - Backend API Docs: http://localhost:8000/docs
+#
+# 5. TROUBLESHOOTING
+#    - Port already in use: Change ports in docker-compose.yml or .env
+#    - Environment variable not loading: Check .env file exists in root
+#    - BETTER_AUTH_SECRET mismatch: Verify same value in frontend and backend
+#    - Database connection issues: Verify DATABASE_URL format and Neon credentials
+#    - Container won't start: Check logs with `docker-compose logs <service>`
+#
+# =============================================================================
