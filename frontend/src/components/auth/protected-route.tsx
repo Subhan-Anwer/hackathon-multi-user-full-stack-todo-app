@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'better-auth/react';
 import { Flex, Text } from '@radix-ui/themes';
+import { authClient } from '@/lib/auth-client';
+import { authLogger } from '@/lib/logger';
 
 /**
  * Protected Route Wrapper Component
@@ -12,18 +13,23 @@ import { Flex, Text } from '@radix-ui/themes';
  */
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending } = authClient.useSession();
   const [checked, setChecked] = useState(false);
   const [showMessage, setShowMessage] = useState(false);
 
   useEffect(() => {
     if (!isPending) {
       if (!session?.user) {
+        // Log session check failure
+        authLogger.sessionCheck(false);
+
         // Redirect to login if not authenticated
         const returnUrl = window.location.pathname + window.location.search;
         router.push(`/auth/login?return=${encodeURIComponent(returnUrl)}`);
         setShowMessage(true);
       } else {
+        // Log successful session check
+        authLogger.sessionCheck(true, session.user.id);
         setChecked(true);
       }
     }

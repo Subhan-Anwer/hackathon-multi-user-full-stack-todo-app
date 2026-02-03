@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSignIn, useSession } from 'better-auth/react';
 import { TextField, Flex, Button, Heading, Text } from '@radix-ui/themes';
 import { EyeOpenIcon, EyeClosedIcon } from '@radix-ui/react-icons';
+import { authClient } from '@/lib/auth-client';
+import { authLogger } from '@/lib/logger';
 
 /**
  * Login Page Component
@@ -20,16 +21,8 @@ import { EyeOpenIcon, EyeClosedIcon } from '@radix-ui/react-icons';
  */
 export default function LoginPage() {
   const router = useRouter();
-  const { data: session, isPending: sessionPending } = useSession();
-  const { signIn, isPending: signInPending } = useSignIn({
-    onSuccess: () => {
-      // Redirect to dashboard after successful login
-      router.push('/dashboard');
-    },
-    onError: (error) => {
-      console.error('Login error:', error);
-    }
-  });
+  const { data: session, isPending: sessionPending } = authClient.useSession();
+  const [signInPending, setSignInPending] = useState(false);
 
   // Redirect authenticated users away from login page
   useEffect(() => {
@@ -80,13 +73,38 @@ export default function LoginPage() {
       return;
     }
 
+    setSignInPending(true);
+
+    // Log sign-in attempt
+    authLogger.signInAttempt(formData.email);
+
     try {
-      await signIn({
+      const result = await authClient.signIn.email({
         email: formData.email,
         password: formData.password
       });
+
+      // Log successful sign-in - result from signIn.email contains user info
+      // Type-safe approach to handle Better Auth response
+      if (result && typeof result === 'object') {
+        // Safely access user data
+        const user = ('user' in result && result.user) ? result.user : null;
+        const userId = (user && typeof user === 'object' && 'id' in user && user.id) ? user.id as string : "";
+        authLogger.signInSuccess(userId, formData.email);
+      } else {
+        // Fallback: log without user ID if result structure is unexpected
+        authLogger.signInSuccess("", formData.email);
+      }
+
+      // Redirect to dashboard after successful login
+      router.push('/dashboard');
     } catch (error) {
+      // Log failed sign-in
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      authLogger.signInFailure(formData.email, errorMessage);
       console.error('Login failed:', error);
+    } finally {
+      setSignInPending(false);
     }
   };
 
@@ -122,43 +140,50 @@ export default function LoginPage() {
           <form aria-label="Sign in form">
             <Flex direction="column" gap="4">
               {/* Email Field */}
-              <TextField.Root>
-                <TextField.Input
+              <div className="space-y-2">
+                <input
                   aria-label="Email address"
                   placeholder="Email address"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  disabled={isPending}
+                  disabled={signInPending}
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? "email-error" : undefined}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
-              </TextField.Root>
-              {errors.email && (
-                <Text id="email-error" color="red" size="2" role="alert">{errors.email}</Text>
-              )}
+                {errors.email && (
+                  <Text id="email-error" color="red" size="2" role="alert">{errors.email}</Text>
+                )}
+              </div>
 
               {/* Password Field */}
-              <TextField.Root>
-                <TextField.Slot>
-                  <TextField.Icon
+              <div className="space-y-2">
+                <div className="relative">
+                  <input
+                    aria-label="Password"
+                    placeholder="Password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    disabled={signInPending}
+                    aria-invalid={!!errors.password}
+                    aria-describedby={errors.password ? "password-error" : undefined}
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   >
                     {showPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
-                  </TextField.Icon>
-                </TextField.Slot>
-                <TextField.Input
-                  aria-label="Password"
-                  placeholder="Password"
-                  type={showPassword ? "text" : "password"}
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  disabled={isPending}
-                  aria-invalid={!!errors.password}
-                  aria-describedby={errors.password ? "password-error" : undefined}
-                />
-              </TextField.Root>
+                  </button>
+                </div>
+                {errors.password && (
+                  <Text id="password-error" color="red" size="2" role="alert">{errors.password}</Text>
+                )}
+              </div>
               {errors.password && (
                 <Text id="password-error" color="red" size="2" role="alert">{errors.password}</Text>
               )}
@@ -177,11 +202,11 @@ export default function LoginPage() {
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={isPending}
+                disabled={signInPending}
                 className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                aria-busy={isPending}
+                aria-busy={signInPending}
               >
-                {isPending ? 'Signing In...' : 'Sign In'}
+                {signInPending ? 'Signing In...' : 'Sign In'}
               </Button>
             </Flex>
           </form>

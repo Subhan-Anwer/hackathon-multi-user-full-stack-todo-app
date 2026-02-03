@@ -9,6 +9,7 @@ from typing import Dict
 from fastapi import Header, HTTPException, status
 import jwt
 from jwt.exceptions import InvalidTokenError
+from ..utils.logger import auth_logger
 
 
 def get_current_user_id(authorization: str = Header(...)) -> str:
@@ -76,7 +77,7 @@ def get_current_user_id(authorization: str = Header(...)) -> str:
         )
 
 
-def verify_user_id_match(url_user_id: str, token_user_id: str) -> None:
+def verify_user_id_match(url_user_id: str, token_user_id: str, endpoint: str = None) -> None:
     """
     Verify that the user_id in the URL matches the authenticated user's ID.
 
@@ -86,11 +87,22 @@ def verify_user_id_match(url_user_id: str, token_user_id: str) -> None:
     Args:
         url_user_id: User ID from the URL path parameter
         token_user_id: User ID extracted from JWT token
+        endpoint: API endpoint being accessed (for logging)
 
     Raises:
         HTTPException: 403 if user IDs don't match (authorization failure)
     """
-    if url_user_id != token_user_id:
+    is_authorized = url_user_id == token_user_id
+
+    # Log authorization check
+    auth_logger.authorization_check(
+        user_id=token_user_id,
+        requested_user_id=url_user_id,
+        is_authorized=is_authorized,
+        endpoint=endpoint
+    )
+
+    if not is_authorized:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied: user_id mismatch",
@@ -111,3 +123,18 @@ async def get_current_user(authorization: str = Header(...)) -> Dict[str, str]:
     """
     user_id = get_current_user_id(authorization)
     return {"user_id": user_id}
+
+
+def get_current_user_id_test(user_id: str = "test-user") -> str:
+    """
+    Test-only dependency that returns a hardcoded user ID.
+
+    This is used in tests to bypass JWT verification.
+
+    Args:
+        user_id: Hardcoded user ID for testing
+
+    Returns:
+        User ID string
+    """
+    return user_id

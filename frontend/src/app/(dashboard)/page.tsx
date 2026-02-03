@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'better-auth/react';
 import { Flex, Heading, Text, Card, Grid, Box } from '@radix-ui/themes';
 import { taskAPI, Task } from '@/lib/api-client';
+import { authClient } from '@/lib/auth-client';
 
 /**
  * Dashboard Page Component
@@ -13,7 +13,7 @@ import { taskAPI, Task } from '@/lib/api-client';
  * message and task overview.
  */
 export default function DashboardPage() {
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({

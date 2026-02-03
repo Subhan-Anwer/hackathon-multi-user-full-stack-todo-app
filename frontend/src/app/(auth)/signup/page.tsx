@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useRegister, useSession } from 'better-auth/react';
-import { TextField, Flex, Button, Heading, Text } from '@radix-ui/themes';
+import { Flex, Button, Heading, Text } from '@radix-ui/themes';
 import { EyeOpenIcon, EyeClosedIcon } from '@radix-ui/react-icons';
+import { authClient } from '@/lib/auth-client';
+import { authLogger } from '@/lib/logger';
 
 /**
  * Signup Page Component
@@ -20,16 +21,8 @@ import { EyeOpenIcon, EyeClosedIcon } from '@radix-ui/react-icons';
  */
 export default function SignupPage() {
   const router = useRouter();
-  const { data: session, isPending: sessionPending } = useSession();
-  const { register, isPending: registerPending } = useRegister({
-    onSuccess: () => {
-      // Redirect to dashboard after successful signup
-      router.push('/dashboard');
-    },
-    onError: (error) => {
-      console.error('Signup error:', error);
-    }
-  });
+  const { data: session, isPending: sessionPending } = authClient.useSession();
+  const [registerPending, setRegisterPending] = useState(false);
 
   // Redirect authenticated users away from signup page
   useEffect(() => {
@@ -90,14 +83,39 @@ export default function SignupPage() {
       return;
     }
 
+    setRegisterPending(true);
+
+    // Log sign-up attempt
+    authLogger.signUpAttempt(formData.email);
+
     try {
-      await register({
+      const result = await authClient.signUp.email({
         email: formData.email,
         password: formData.password,
         name: formData.email.split('@')[0] // Use email prefix as name
       });
+
+      // Log successful sign-up - result from signUp.email contains user info
+      // Type-safe approach to handle Better Auth response
+      if (result && typeof result === 'object') {
+        // Safely access user data
+        const user = ('user' in result && result.user) ? result.user : null;
+        const userId = (user && typeof user === 'object' && 'id' in user && user.id) ? user.id as string : "";
+        authLogger.signUpSuccess(userId, formData.email);
+      } else {
+        // Fallback: log without user ID if result structure is unexpected
+        authLogger.signUpSuccess("", formData.email);
+      }
+
+      // Redirect to dashboard after successful signup
+      router.push('/dashboard');
     } catch (error) {
+      // Log failed sign-up
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      authLogger.signUpFailure(formData.email, errorMessage);
       console.error('Registration failed:', error);
+    } finally {
+      setRegisterPending(false);
     }
   };
 
@@ -133,80 +151,90 @@ export default function SignupPage() {
           <form aria-label="Sign up form">
             <Flex direction="column" gap="4">
               {/* Email Field */}
-              <TextField.Root>
-                <TextField.Input
+              <div className="space-y-2">
+                <input
                   aria-label="Email address"
                   placeholder="Email address"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  disabled={isPending}
+                  disabled={registerPending}
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? "email-error" : undefined}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
-              </TextField.Root>
-              {errors.email && (
-                <Text id="email-error" color="red" size="2" role="alert">{errors.email}</Text>
-              )}
+                {errors.email && (
+                  <Text id="email-error" color="red" size="2" role="alert">{errors.email}</Text>
+                )}
+              </div>
 
               {/* Password Field */}
-              <TextField.Root>
-                <TextField.Slot>
-                  <TextField.Icon aria-label={showPassword ? "Hide password" : "Show password"}>
-                    {showPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
-                  </TextField.Icon>
-                </TextField.Slot>
-                <TextField.Input
-                  aria-label="Password"
-                  placeholder="Password"
-                  type={showPassword ? "text" : "password"}
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  disabled={isPending}
-                  aria-invalid={!!errors.password}
-                  aria-describedby={errors.password ? "password-error" : undefined}
-                />
-              </TextField.Root>
-              {errors.password && (
-                <Text id="password-error" color="red" size="2" role="alert">{errors.password}</Text>
-              )}
-              <Text color="gray" size="1">
-                Password must be at least 8 characters
-              </Text>
-
-              {/* Confirm Password Field */}
-              <TextField.Root>
-                <TextField.Slot>
-                  <TextField.Icon
+              <div className="space-y-2">
+                <div className="relative">
+                  <input
+                    aria-label="Password"
+                    placeholder="Password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    disabled={registerPending}
+                    aria-invalid={!!errors.password}
+                    aria-describedby={errors.password ? "password-error" : undefined}
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? "Hide confirm password" : "Show confirm password"}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   >
                     {showPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
-                  </TextField.Icon>
-                </TextField.Slot>
-                <TextField.Input
-                  aria-label="Confirm Password"
-                  placeholder="Confirm Password"
-                  type={showPassword ? "text" : "password"}
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                  disabled={isPending}
-                  aria-invalid={!!errors.confirmPassword}
-                  aria-describedby={errors.confirmPassword ? "confirm-password-error" : undefined}
-                />
-              </TextField.Root>
-              {errors.confirmPassword && (
-                <Text id="confirm-password-error" color="red" size="2" role="alert">{errors.confirmPassword}</Text>
-              )}
+                  </button>
+                </div>
+                {errors.password && (
+                  <Text id="password-error" color="red" size="2" role="alert">{errors.password}</Text>
+                )}
+                <Text color="gray" size="1">
+                  Password must be at least 8 characters
+                </Text>
+              </div>
+
+              {/* Confirm Password Field */}
+              <div className="space-y-2">
+                <div className="relative">
+                  <input
+                    aria-label="Confirm Password"
+                    placeholder="Confirm Password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                    disabled={registerPending}
+                    aria-invalid={!!errors.confirmPassword}
+                    aria-describedby={errors.confirmPassword ? "confirm-password-error" : undefined}
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide confirm password" : "Show confirm password"}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    {showPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <Text id="confirm-password-error" color="red" size="2" role="alert">{errors.confirmPassword}</Text>
+                )}
+              </div>
 
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={isPending}
+                disabled={registerPending}
                 className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                aria-busy={isPending}
+                aria-busy={registerPending}
               >
-                {isPending ? 'Creating Account...' : 'Sign Up'}
+                {registerPending ? 'Creating Account...' : 'Sign Up'}
               </Button>
             </Flex>
           </form>
