@@ -1,0 +1,341 @@
+openapi: 3.1.0
+info:
+  title: API Proxy for Backend Forwarding
+  description: |
+    Server-side API proxy that reads JWT tokens from httpOnly cookies and forwards them to the
+    FastAPI backend as Authorization headers. This proxy enables cookie-based authentication
+    without exposing tokens to client-side JavaScript.
+
+    **Pattern**: Browser sends cookie → Next.js proxy reads cookie (server-side) → Proxy forwards
+    request to FastAPI backend with Authorization: Bearer <token> header.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Development frontend server (proxy)
+
+tags:
+  - name: Proxy
+    description: Transparent proxy to FastAPI backend with JWT forwarding
+
+paths:
+  /api/proxy/{path}:
+    parameters:
+      - name: path
+        in: path
+        required: true
+        description: |
+          Catch-all path parameter that forwards to FastAPI backend.
+          Example: /api/proxy/user-123/tasks → http://localhost:8000/api/user-123/tasks
+        schema:
+          type: string
+        examples:
+          listTasks:
+            value: user-123/tasks
+            summary: List user's tasks
+          getTask:
+            value: user-123/tasks/1
+            summary: Get specific task
+          updateTask:
+            value: user-123/tasks/1
+            summary: Update specific task
+
+    get:
+      tags:
+        - Proxy
+      summary: Proxy GET request to backend
+      description: |
+        Reads JWT token from httpOnly cookie, forwards GET request to FastAPI backend with
+        Authorization header. Returns backend response to client.
+      operationId: proxyGet
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Successful response from backend
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Response forwarded from backend
+        '401':
+          description: No session token found or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: User ID mismatch (trying to access another user's data)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Proxy error or backend communication failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Proxy
+      summary: Proxy POST request to backend
+      description: |
+        Reads JWT token from httpOnly cookie, forwards POST request with body to FastAPI backend
+        with Authorization header. Returns backend response to client.
+      operationId: proxyPost
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Request body forwarded to backend
+              additionalProperties: true
+      responses:
+        '201':
+          description: Resource created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Response forwarded from backend
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: No session token found or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: User ID mismatch (trying to create resource for another user)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Proxy error or backend communication failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Proxy
+      summary: Proxy PUT request to backend
+      description: |
+        Reads JWT token from httpOnly cookie, forwards PUT request with body to FastAPI backend
+        with Authorization header. Returns backend response to client.
+      operationId: proxyPut
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Request body forwarded to backend
+              additionalProperties: true
+      responses:
+        '200':
+          description: Resource updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Response forwarded from backend
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: No session token found or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: User ID mismatch (trying to update another user's resource)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Proxy error or backend communication failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Proxy
+      summary: Proxy DELETE request to backend
+      description: |
+        Reads JWT token from httpOnly cookie, forwards DELETE request to FastAPI backend
+        with Authorization header. Returns backend response to client.
+      operationId: proxyDelete
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Resource deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Resource deleted successfully
+        '401':
+          description: No session token found or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: User ID mismatch (trying to delete another user's resource)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Proxy error or backend communication failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      tags:
+        - Proxy
+      summary: Proxy PATCH request to backend
+      description: |
+        Reads JWT token from httpOnly cookie, forwards PATCH request with body to FastAPI backend
+        with Authorization header. Returns backend response to client.
+      operationId: proxyPatch
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Request body forwarded to backend (partial update)
+              additionalProperties: true
+      responses:
+        '200':
+          description: Resource partially updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Response forwarded from backend
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: No session token found or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: User ID mismatch (trying to update another user's resource)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Proxy error or backend communication failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: better-auth.session_token
+      description: httpOnly cookie containing JWT session token (read server-side by proxy)
+
+  schemas:
+    Error:
+      type: object
+      description: Standard error response
+      properties:
+        error:
+          type: string
+          description: Error type/code
+          example: Unauthorized
+        message:
+          type: string
+          description: Human-readable error message
+          example: No session token found
+      required:
+        - error
+        - message
+
+x-proxy-configuration:
+  description: |
+    Internal configuration for proxy implementation (not part of public API contract)
+  backend_url:
+    development: http://localhost:8000
+    production: https://api.yourdomain.com
+  cookie_name: better-auth.session_token
+  authorization_header: "Authorization: Bearer {token}"
+  runtime: edge
+  timeout: 30s
+  error_handling:
+    - condition: No cookie found
+      response: 401 Unauthorized
+      message: "No session token found"
+    - condition: Backend returns 401
+      response: 401 Unauthorized (forwarded)
+      message: "Invalid or expired token"
+    - condition: Backend returns 403
+      response: 403 Forbidden (forwarded)
+      message: "Access denied: user_id mismatch"
+    - condition: Backend unreachable
+      response: 500 Internal Server Error
+      message: "Failed to proxy request"
