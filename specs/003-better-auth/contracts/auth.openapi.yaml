@@ -1,0 +1,330 @@
+openapi: 3.1.0
+info:
+  title: Better Auth Authentication API
+  description: |
+    Authentication endpoints for user signup, login, and logout using Better Auth library.
+    These endpoints are handled by Better Auth on the Next.js frontend and set httpOnly cookies
+    containing JWT tokens for subsequent API requests.
+  version: 1.0.0
+  contact:
+    name: Todo App Team
+
+servers:
+  - url: http://localhost:3000
+    description: Development frontend server
+  - url: https://yourdomain.com
+    description: Production frontend server
+
+tags:
+  - name: Authentication
+    description: User authentication operations (signup, login, logout)
+
+paths:
+  /api/auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Create new user account
+      description: |
+        Registers a new user with email and password credentials. On success, creates a user
+        record in the database, generates a JWT token, stores it in an httpOnly cookie, and
+        automatically logs the user in.
+
+        **Implementation**: Better Auth handles this endpoint automatically.
+      operationId: signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address (must be unique)
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  description: User's password (minimum 8 characters)
+                  example: SecurePassword123
+                name:
+                  type: string
+                  description: Optional display name
+                  example: John Doe
+      responses:
+        '201':
+          description: User account created successfully
+          headers:
+            Set-Cookie:
+              description: httpOnly cookie containing JWT session token
+              schema:
+                type: string
+                example: better-auth.session_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  session:
+                    $ref: '#/components/schemas/Session'
+        '400':
+          description: Invalid request (validation errors)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidEmail:
+                  summary: Invalid email format
+                  value:
+                    error: ValidationError
+                    message: Please enter a valid email address
+                passwordTooShort:
+                  summary: Password too short
+                  value:
+                    error: ValidationError
+                    message: Password must be at least 8 characters
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: ConflictError
+                message: An account with this email already exists
+
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate existing user
+      description: |
+        Authenticates a user with email and password credentials. On success, verifies the
+        password, generates a JWT token, stores it in an httpOnly cookie, and creates a new
+        session in the database.
+
+        **Implementation**: Better Auth handles this endpoint automatically.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  description: User's password
+                  example: SecurePassword123
+      responses:
+        '200':
+          description: Authentication successful
+          headers:
+            Set-Cookie:
+              description: httpOnly cookie containing JWT session token
+              schema:
+                type: string
+                example: better-auth.session_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  session:
+                    $ref: '#/components/schemas/Session'
+        '401':
+          description: Authentication failed (invalid credentials)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: AuthenticationError
+                message: Invalid email or password
+
+  /api/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: End user session
+      description: |
+        Logs out the currently authenticated user by deleting their session from the database
+        and clearing the httpOnly cookie. Subsequent API requests will fail with 401 Unauthorized
+        until the user logs in again.
+
+        **Implementation**: Better Auth handles this endpoint automatically.
+      operationId: logout
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          headers:
+            Set-Cookie:
+              description: Cookie cleared (Max-Age=0)
+              schema:
+                type: string
+                example: better-auth.session_token=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Logout successful
+        '401':
+          description: Not authenticated (no valid session token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: AuthenticationError
+                message: No session token found
+
+  /api/auth/session:
+    get:
+      tags:
+        - Authentication
+      summary: Get current session information
+      description: |
+        Retrieves the current user's session information, including user details and session
+        expiration. Used to check if a user is logged in and restore session state on page load.
+
+        **Implementation**: Better Auth provides this endpoint automatically.
+      operationId: getSession
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Session information retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  session:
+                    $ref: '#/components/schemas/Session'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: AuthenticationError
+                message: No active session
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: better-auth.session_token
+      description: httpOnly cookie containing JWT session token
+
+  schemas:
+    User:
+      type: object
+      description: User account information (without sensitive data)
+      properties:
+        id:
+          type: string
+          description: Unique user identifier (UUID)
+          example: usr_cm5x8y9z0000
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: user@example.com
+        name:
+          type: string
+          nullable: true
+          description: User's display name (optional)
+          example: John Doe
+        emailVerified:
+          type: boolean
+          description: Whether email has been verified
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when account was created
+          example: '2026-02-03T10:30:00Z'
+      required:
+        - id
+        - email
+
+    Session:
+      type: object
+      description: Active user session information
+      properties:
+        id:
+          type: string
+          description: Unique session identifier (UUID)
+          example: ses_cm5x8y9z0001
+        userId:
+          type: string
+          description: User ID this session belongs to
+          example: usr_cm5x8y9z0000
+        expiresAt:
+          type: string
+          format: date-time
+          description: Timestamp when session expires (7 days from creation)
+          example: '2026-02-10T10:30:00Z'
+        ipAddress:
+          type: string
+          nullable: true
+          description: IP address of the client
+          example: 192.168.1.1
+        userAgent:
+          type: string
+          nullable: true
+          description: Browser user agent string
+          example: Mozilla/5.0 (Windows NT 10.0; Win64; x64)...
+      required:
+        - id
+        - userId
+        - expiresAt
+
+    Error:
+      type: object
+      description: Standard error response
+      properties:
+        error:
+          type: string
+          description: Error type/code
+          example: ValidationError
+        message:
+          type: string
+          description: Human-readable error message
+          example: Password must be at least 8 characters
+      required:
+        - error
+        - message

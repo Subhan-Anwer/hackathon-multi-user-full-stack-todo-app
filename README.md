@@ -217,6 +217,37 @@ docker-compose config | grep BETTER_AUTH_SECRET
 
 You should see the same value appear twice (once for frontend, once for backend).
 
+## Rate Limiting Considerations
+
+For production deployments, consider implementing rate limiting to protect against abuse:
+
+- Login attempts: Limit to 5 attempts per IP per 15 minutes
+- Registration: Limit to 1 registration per IP per hour
+- API requests: Implement per-user rate limits (e.g., 1000 requests per hour)
+
+### Implementation Options
+
+**Option 1: Middleware-based Rate Limiting**
+```python
+# For FastAPI backend, consider using slowapi or similar
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+```
+
+**Option 2: Redis-backed Rate Limiting**
+```python
+# Store rate limit counters in Redis for distributed systems
+import redis
+r = redis.Redis(host='localhost', port=6379, db=0)
+```
+
+**Option 3: CDN/Reverse Proxy Level**
+- Cloudflare rate limiting rules
+- AWS WAF rate-based rules
+- NGINX rate limiting with burst control
+
 ## 📁 Project Structure
 
 ```
