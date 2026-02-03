@@ -1,5 +1,6 @@
 from sqlmodel import Session, select
 from typing import Optional
+from datetime import datetime
 from .models import Task
 from ..schemas.task_schemas import TaskCreate, TaskUpdate
 
@@ -87,7 +88,6 @@ def update_task(session: Session, task_id: int, user_id: str, task_update: TaskU
         setattr(task, field, value)
 
     # Update the updated_at timestamp
-    from datetime import datetime
     task.updated_at = datetime.utcnow()
 
     session.add(task)
@@ -141,7 +141,6 @@ def toggle_task_completion(session: Session, task_id: int, user_id: str) -> Opti
     task.completed = not task.completed
 
     # Update the updated_at timestamp
-    from datetime import datetime
     task.updated_at = datetime.utcnow()
 
     session.add(task)

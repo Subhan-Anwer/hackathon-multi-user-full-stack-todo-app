@@ -12,6 +12,7 @@ from ..models.task_crud import (
     delete_task,
     toggle_task_completion
 )
+from ..dependencies.auth import get_current_user_id, verify_user_id_match
 
 # Create router with prefix for user-scoped tasks
 router = APIRouter(prefix="/api/{user_id}/tasks", tags=["tasks"])
@@ -20,6 +21,7 @@ router = APIRouter(prefix="/api/{user_id}/tasks", tags=["tasks"])
 @router.get("/", response_model=List[TaskResponse])
 async def get_tasks(
     user_id: str,
+    token_user_id: str = Depends(get_current_user_id),
     session: Session = Depends(get_session_dependency)
 ):
     """
@@ -27,15 +29,14 @@ async def get_tasks(
 
     Args:
         user_id: ID of the user whose tasks to retrieve
+        token_user_id: User ID extracted from JWT token
         session: Database session
 
     Returns:
         List of tasks belonging to the user
     """
-    # In a real implementation, we'd verify that the user_id matches
-    # the authenticated user from the JWT token. For now, we'll trust the user_id
-    # that comes from the URL path parameter.
-    # This would normally be handled by an authentication dependency.
+    # Verify user_id in URL matches authenticated user
+    verify_user_id_match(user_id, token_user_id)
 
     tasks = get_tasks_by_user(session=session, user_id=user_id)
     return tasks
@@ -45,6 +46,7 @@ async def get_tasks(
 async def create_new_task(
     user_id: str,
     task_data: TaskCreate,
+    token_user_id: str = Depends(get_current_user_id),
     session: Session = Depends(get_session_dependency)
 ):
     """
@@ -53,13 +55,14 @@ async def create_new_task(
     Args:
         user_id: ID of the user creating the task
         task_data: Task creation data
+        token_user_id: User ID extracted from JWT token
         session: Database session
 
     Returns:
         Created task
     """
-    # In a real implementation, we'd verify that the user_id matches
-    # the authenticated user from the JWT token.
+    # Verify user_id in URL matches authenticated user
+    verify_user_id_match(user_id, token_user_id)
 
     try:
         task = create_task(session=session, task_data=task_data, user_id=user_id)
@@ -75,6 +78,7 @@ async def create_new_task(
 async def get_specific_task(
     user_id: str,
     task_id: int,
+    token_user_id: str = Depends(get_current_user_id),
     session: Session = Depends(get_session_dependency)
 ):
     """
@@ -83,13 +87,14 @@ async def get_specific_task(
     Args:
         user_id: ID of the user requesting the task
         task_id: ID of the task to retrieve
+        token_user_id: User ID extracted from JWT token
         session: Database session
 
     Returns:
         Task if found and belongs to user
     """
-    # In a real implementation, we'd verify that the user_id matches
-    # the authenticated user from the JWT token.
+    # Verify user_id in URL matches authenticated user
+    verify_user_id_match(user_id, token_user_id)
 
     task = get_task_by_id(session=session, task_id=task_id, user_id=user_id)
     if not task:
@@ -105,6 +110,7 @@ async def update_existing_task(
     user_id: str,
     task_id: int,
     task_data: TaskUpdate,
+    token_user_id: str = Depends(get_current_user_id),
     session: Session = Depends(get_session_dependency)
 ):
     """
@@ -114,13 +120,14 @@ async def update_existing_task(
         user_id: ID of the user requesting the update
         task_id: ID of the task to update
         task_data: Task update data
+        token_user_id: User ID extracted from JWT token
         session: Database session
 
     Returns:
         Updated task
     """
-    # In a real implementation, we'd verify that the user_id matches
-    # the authenticated user from the JWT token.
+    # Verify user_id in URL matches authenticated user
+    verify_user_id_match(user_id, token_user_id)
 
     updated_task = update_task(
         session=session,
@@ -154,6 +161,7 @@ async def update_existing_task(
 async def delete_existing_task(
     user_id: str,
     task_id: int,
+    token_user_id: str = Depends(get_current_user_id),
     session: Session = Depends(get_session_dependency)
 ):
     """
@@ -162,13 +170,14 @@ async def delete_existing_task(
     Args:
         user_id: ID of the user requesting the deletion
         task_id: ID of the task to delete
+        token_user_id: User ID extracted from JWT token
         session: Database session
 
     Returns:
         204 No Content on successful deletion
     """
-    # In a real implementation, we'd verify that the user_id matches
-    # the authenticated user from the JWT token.
+    # Verify user_id in URL matches authenticated user
+    verify_user_id_match(user_id, token_user_id)
 
     success = delete_task(session=session, task_id=task_id, user_id=user_id)
     if not success:
@@ -184,6 +193,7 @@ async def delete_existing_task(
 async def toggle_task_completion_status(
     user_id: str,
     task_id: int,
+    token_user_id: str = Depends(get_current_user_id),
     session: Session = Depends(get_session_dependency)
 ):
     """
@@ -192,13 +202,14 @@ async def toggle_task_completion_status(
     Args:
         user_id: ID of the user requesting the toggle
         task_id: ID of the task to toggle
+        token_user_id: User ID extracted from JWT token
         session: Database session
 
     Returns:
         Updated task with toggled completion status
     """
-    # In a real implementation, we'd verify that the user_id matches
-    # the authenticated user from the JWT token.
+    # Verify user_id in URL matches authenticated user
+    verify_user_id_match(user_id, token_user_id)
 
     updated_task = toggle_task_completion(session=session, task_id=task_id, user_id=user_id)
     if not updated_task:
@@ -208,3 +219,5 @@ async def toggle_task_completion_status(
         )
 
     return updated_task
+
+
