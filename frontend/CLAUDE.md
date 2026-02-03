@@ -19,7 +19,7 @@ This is the frontend layer of a multi-user todo application built with Next.js 1
 - **Framework:** Next.js 16+ (App Router)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS
-- **Authentication:** Better Auth with JWT tokens
+- **Authentication:** Better Auth v1.4.18+ with JWT tokens
 - **UI Components:** shadcn/ui (component library)
 - **HTTP Client:** Fetch API with custom wrapper
 - **State Management:** React hooks + Server Components
@@ -68,6 +68,22 @@ frontend/
 // Better Auth is configured to issue JWT tokens
 // Tokens are stored in httpOnly cookies for security
 // Every API request includes the JWT token automatically
+```
+
+**Better Auth v1.4.18 API Pattern:**
+```typescript
+// Create centralized auth client
+// src/lib/auth-client.ts
+import { createAuthClient } from 'better-auth/react';
+export const authClient = createAuthClient({
+  baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+});
+
+// Use in components with authClient methods
+// Login: authClient.signIn.email({ email, password })
+// Signup: authClient.signUp.email({ email, password, name })
+// Logout: authClient.signOut()
+// Session: authClient.useSession()
 ```
 
 **Protected Routes Pattern:**

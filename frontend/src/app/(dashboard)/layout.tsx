@@ -2,9 +2,9 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'better-auth/react';
 import { Flex, Container, Text, Button } from '@radix-ui/themes';
 import LogoutButton from '@/components/auth/logout-button';
+import { authClient } from '@/lib/auth-client';
 
 /**
  * Protected Dashboard Layout
@@ -19,7 +19,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending } = authClient.useSession();
 
   useEffect(() => {
     // If session is loaded and user is not authenticated, redirect to login

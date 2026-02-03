@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'better-auth/react';
 import { Flex, Heading, Text, Card, Button, TextField } from '@radix-ui/themes';
 import { taskAPI, Task } from '@/lib/api-client';
 import ProtectedRoute from '@/components/auth/protected-route';
+import { authClient } from '@/lib/auth-client';
 
 /**
  * Tasks Dashboard Page Component
@@ -13,7 +13,7 @@ import ProtectedRoute from '@/components/auth/protected-route';
  * Protected route that redirects unauthenticated users to login.
  */
 export default function TasksPage() {
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTask, setNewTask] = useState({ title: '', description: '' });
@@ -60,7 +60,7 @@ export default function TasksPage() {
     if (!session?.user?.id) return;
 
     try {
-      const updatedTask = await taskAPI.toggleTaskCompletion(session.user.id, taskId);
+      const updatedTask = await taskAPI.toggleComplete(session.user.id, taskId);
       setTasks(tasks.map(task =>
         task.id === taskId ? updatedTask : task
       ));

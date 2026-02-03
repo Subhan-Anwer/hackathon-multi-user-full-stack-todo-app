@@ -1,9 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useSignOut } from 'better-auth/react';
 import { Button } from '@radix-ui/themes';
 import { useState } from 'react';
+import { authClient } from '@/lib/auth-client';
+import { authLogger } from '@/lib/logger';
 
 /**
  * Logout Button Component
@@ -13,26 +14,30 @@ import { useState } from 'react';
  */
 export default function LogoutButton() {
   const router = useRouter();
-  const { signOut, isPending } = useSignOut({
-    onSuccess: () => {
+  const [isPending, setIsPending] = useState(false);
+
+  const handleClick = async () => {
+    setIsPending(true);
+
+    try {
+      await authClient.signOut();
+
+      // Log successful sign-out
+      authLogger.signOutSuccess();
+
       // Redirect to login page after successful logout
       router.push('/auth/login');
       router.refresh(); // Refresh the router to clear any cached state
-    },
-    onError: (error) => {
-      console.error('Logout error:', error);
-      // Even if there's an error, redirect to login
-      router.push('/auth/login');
-    }
-  });
-
-  const handleClick = async () => {
-    try {
-      await signOut();
     } catch (error) {
+      // Log failed sign-out
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      authLogger.signOutFailure(errorMessage);
       console.error('Failed to logout:', error);
+
       // Still redirect to login page
       router.push('/auth/login');
+    } finally {
+      setIsPending(false);
     }
   };
 
