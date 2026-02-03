@@ -396,3 +396,10 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 - Follow RESTful API conventions
 - Enforce user isolation on all database queries
 - Never expose user data across user boundaries
+
+## Active Technologies
+- Python 3.11 (for SQLModel and FastAPI compatibility) + SQLModel (ORM), Pydantic (validation), Neon PostgreSQL driver (002-db-schema)
+- PostgreSQL (Neon serverless database) (002-db-schema)
+
+## Recent Changes
+- 002-db-schema: Added Python 3.11 (for SQLModel and FastAPI compatibility) + SQLModel (ORM), Pydantic (validation), Neon PostgreSQL driver
