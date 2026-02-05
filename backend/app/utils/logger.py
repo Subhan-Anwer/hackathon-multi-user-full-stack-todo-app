@@ -54,7 +54,7 @@ class AuthLogger:
         """
         # Add timestamp if not present
         if "timestamp" not in event:
-            event["timestamp"] = datetime.utcnow().isoformat() + "Z"
+            event["timestamp"] = datetime.now().isoformat() + "Z"
 
         # Log to console as JSON
         log_entry = json.dumps(event)
@@ -62,7 +62,7 @@ class AuthLogger:
 
         # Optionally log to file
         if self.log_to_file:
-            log_file = self.log_dir / f"auth-{datetime.utcnow().strftime('%Y-%m-%d')}.log"
+            log_file = self.log_dir / f"auth-{datetime.now().strftime('%Y-%m-%d')}.log"
             with open(log_file, "a") as f:
                 f.write(log_entry + "\n")
 

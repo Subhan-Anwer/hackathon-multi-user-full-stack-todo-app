@@ -400,6 +400,8 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 ## Active Technologies
 - Python 3.11 (for SQLModel and FastAPI compatibility) + SQLModel (ORM), Pydantic (validation), Neon PostgreSQL driver (002-db-schema)
 - PostgreSQL (Neon serverless database) (002-db-schema)
+- Python 3.11 + FastAPI, SQLModel, Better Auth JWT, Pydantic v2, uvicorn (005-fastapi-backend-crud)
+- PostgreSQL (via SQLModel ORM with Neon driver) (005-fastapi-backend-crud)
 
 ## Recent Changes
 - 002-db-schema: Added Python 3.11 (for SQLModel and FastAPI compatibility) + SQLModel (ORM), Pydantic (validation), Neon PostgreSQL driver

@@ -37,7 +37,7 @@ def get_session() -> Generator[Session, None, None]:
 
 
 # FastAPI dependency
-def get_session_dependency() -> Session:
+def get_session_dependency():
     """FastAPI dependency to get database session."""
     with Session(engine) as session:
         yield session
