@@ -2,7 +2,7 @@ from sqlmodel import Session, select
 from typing import Optional
 from datetime import datetime
 from .models import Task
-from ..schemas.task_schemas import TaskCreate, TaskUpdate
+from ..schemas.task import TaskCreate, TaskUpdate
 
 
 def create_task(session: Session, task_data: TaskCreate, user_id: str) -> Task:
@@ -17,18 +17,22 @@ def create_task(session: Session, task_data: TaskCreate, user_id: str) -> Task:
     Returns:
         Created Task instance
     """
-    # Create task with validated data (validation handled by Pydantic at API layer)
-    task = Task(
-        title=task_data.title,
-        description=task_data.description,
-        user_id=user_id,
-        completed=False  # Default to False
-    )
+    try:
+        # Create task with validated data (validation handled by Pydantic at API layer)
+        task = Task(
+            title=task_data.title,
+            description=task_data.description,
+            user_id=user_id,
+            completed=False  # Default to False
+        )
 
-    session.add(task)
-    session.commit()
-    session.refresh(task)
-    return task
+        session.add(task)
+        session.commit()
+        session.refresh(task)
+        return task
+    except Exception:
+        session.rollback()
+        raise
 
 
 def get_task_by_id(session: Session, task_id: int, user_id: str) -> Optional[Task]:
@@ -75,25 +79,29 @@ def update_task(session: Session, task_id: int, user_id: str, task_update: TaskU
     Returns:
         Updated Task instance if found and belongs to user, None otherwise
     """
-    # Get the existing task
-    statement = select(Task).where(Task.id == task_id, Task.user_id == user_id)
-    task = session.exec(statement).first()
+    try:
+        # Get the existing task
+        statement = select(Task).where(Task.id == task_id, Task.user_id == user_id)
+        task = session.exec(statement).first()
 
-    if not task:
-        return None
+        if not task:
+            return None
 
-    # Update the task with provided values (validation handled by Pydantic at API layer)
-    update_data = task_update.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(task, field, value)
+        # Update the task with provided values (validation handled by Pydantic at API layer)
+        update_data = task_update.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(task, field, value)
 
-    # Update the updated_at timestamp
-    task.updated_at = datetime.utcnow()
+        # Update the updated_at timestamp
+        task.updated_at = datetime.utcnow()
 
-    session.add(task)
-    session.commit()
-    session.refresh(task)
-    return task
+        session.add(task)
+        session.commit()
+        session.refresh(task)
+        return task
+    except Exception:
+        session.rollback()
+        raise
 
 
 def delete_task(session: Session, task_id: int, user_id: str) -> bool:
@@ -108,15 +116,19 @@ def delete_task(session: Session, task_id: int, user_id: str) -> bool:
     Returns:
         True if task was deleted, False if task not found or doesn't belong to user
     """
-    statement = select(Task).where(Task.id == task_id, Task.user_id == user_id)
-    task = session.exec(statement).first()
+    try:
+        statement = select(Task).where(Task.id == task_id, Task.user_id == user_id)
+        task = session.exec(statement).first()
 
-    if not task:
-        return False
+        if not task:
+            return False
 
-    session.delete(task)
-    session.commit()
-    return True
+        session.delete(task)
+        session.commit()
+        return True
+    except Exception:
+        session.rollback()
+        raise
 
 
 def toggle_task_completion(session: Session, task_id: int, user_id: str) -> Optional[Task]:
@@ -131,19 +143,23 @@ def toggle_task_completion(session: Session, task_id: int, user_id: str) -> Opti
     Returns:
         Updated Task instance if found and belongs to user, None otherwise
     """
-    statement = select(Task).where(Task.id == task_id, Task.user_id == user_id)
-    task = session.exec(statement).first()
+    try:
+        statement = select(Task).where(Task.id == task_id, Task.user_id == user_id)
+        task = session.exec(statement).first()
 
-    if not task:
-        return None
+        if not task:
+            return None
 
-    # Toggle completion status
-    task.completed = not task.completed
+        # Toggle completion status
+        task.completed = not task.completed
 
-    # Update the updated_at timestamp
-    task.updated_at = datetime.utcnow()
+        # Update the updated_at timestamp
+        task.updated_at = datetime.utcnow()
 
-    session.add(task)
-    session.commit()
-    session.refresh(task)
-    return task
+        session.add(task)
+        session.commit()
+        session.refresh(task)
+        return task
+    except Exception:
+        session.rollback()
+        raise
